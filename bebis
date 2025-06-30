@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bebiş Botu Taksimetresi</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .total-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .total-label {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .total-amount {
+            font-size: 3em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .verification-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border: 2px dashed #667eea;
+        }
+
+        .captcha-box {
+            margin-bottom: 20px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: 500;
+            color: #2c3e50;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-container:hover {
+            color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkmark {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            margin-right: 15px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-container input[type="checkbox"]:checked + .checkmark {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #667eea;
+        }
+
+        .checkbox-container input[type="checkbox"]:checked + .checkmark:after {
+            content: "✓";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .discount-code-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .discount-label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .discount-input {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .discount-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .apply-button {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            align-self: flex-start;
+        }
+
+        .apply-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .apply-button:active {
+            transform: translateY(0);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #fff 0%, #f8f9ff 100%);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.4s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            line-height: 1;
+        }
+
+        .close:hover {
+            transform: scale(1.2);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .question-container {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .question-container h3 {
+            margin: 0 0 20px 0;
+            color: #2c3e50;
+            font-size: 1.2em;
+        }
+
+        .emoji-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .emoji-option {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+        }
+
+        .emoji-option:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            transform: scale(1.1);
+        }
+
+        .emoji-option input[type="radio"] {
+            display: none;
+        }
+
+        .emoji-option input[type="radio"]:checked + .emoji {
+            transform: scale(1.2);
+        }
+
+        .emoji-option input[type="radio"]:checked {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .emoji-option:has(input[type="radio"]:checked) {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .emoji {
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            margin: 20px 0;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.1em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        td {
+            padding: 18px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            transition: background-color 0.3s ease;
+        }
+
+        tr:hover {
+            background-color: #f8f9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .adet-col {
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .yuzde-col {
+            text-align: center;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .tutar-col {
+            text-align: right;
+            font-weight: bold;
+            color: #27ae60;
+            font-size: 1.1em;
+        }
+
+        .description-col {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .total-amount {
+                font-size: 2.5em;
+            }
+            
+            th, td {
+                padding: 12px 8px;
+                font-size: 0.9em;
+            }
+
+            .verification-section {
+                padding: 20px;
+            }
+
+            .checkbox-container {
+                font-size: 1em;
+            }
+
+            .discount-code-section {
+                gap: 15px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .emoji-options {
+                gap: 10px;
+            }
+
+            .emoji-option {
+                width: 50px;
+                height: 50px;
+            }
+
+            .emoji {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Bebiş Botu Taksimetresi</h1>
+        
+        <div class="total-section">
+            <div class="total-label">TOTAL</div>
+            <div class="total-amount">₺71.025,00</div>
+        </div>
+
+        <div class="verification-section">
+            <div class="captcha-box">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="bebisCheck">
+                    <span class="checkmark"></span>
+                    <span class="checkbox-text">Bbebiş olduğumu onaylıyorum 👶</span>
+                </label>
+            </div>
+            
+            <div class="discount-code-section">
+                <label for="discountCode" class="discount-label">Bebiş İndirim Kodunuzu Girin:</label>
+                <input type="text" id="discountCode" class="discount-input" placeholder="BEBIS2025">
+                <button class="apply-button">Uygula</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Açıklama</th>
+                        <th>Adet</th>
+                        <th>Yüzde</th>
+                        <th>Tutar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="description-col">Pat pat botu ve Kolaylaştıran teknik sonrası content</td>
+                        <td class="adet-col">86</td>
+                        <td class="yuzde-col">10%</td>
+                        <td class="tutar-col">₺6.450,00</td>
+                    </tr>
+                    <tr>
+                        <td class="description-col">Run full ile yapılan</td>
+                        <td class="adet-col">74</td>
+                        <td class="yuzde-col">20%</td>
+                        <td class="tutar-col">₺11.100,00</td>
+                    </tr>
+                    <tr>
+                        <td class="description-col">Botla kontrol edilen istatistik</td>
+                        <td class="adet-col">2480</td>
+                        <td class="yuzde-col">2%</td>
+                        <td class="tutar-col">₺37.200,00</td>
+                    </tr>
+                    <tr>
+                        <td class="description-col">Metin Birleştirici sonrası Content</td>
+                        <td class="adet-col">65</td>
+                        <td class="yuzde-col">20%</td>
+                        <td class="tutar-col">₺9.750,00</td>
+                    </tr>
+                    <tr>
+                        <td class="description-col">Yeni Teknik Sonrası Resurce</td>
+                        <td class="adet-col">6</td>
+                        <td class="yuzde-col">10%</td>
+                        <td class="tutar-col">₺900,00</td>
+                    </tr>
+                    <tr>
+                        <td class="description-col">Extensionlar ve teknikler</td>
+                        <td class="adet-col">150</td>
+                        <td class="yuzde-col">5%</td>
+                        <td class="tutar-col">₺5.625,00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="bebisModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🤖 Bebiş Doğrulama Sistemi</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="question-container">
+                    <h3>1. Sizi en çok trigger'layını seçiniz:</h3>
+                    <div class="emoji-options" data-question="1">
+                        <label class="emoji-option">
+                            <input type="radio" name="trigger" value="🧕">
+                            <span class="emoji">🧕</span>
+                        </label>
+                        <label class="emoji-option">
+                            <input type="radio" name="trigger" value="💃🏻">
+                            <span class="emoji">💃🏻</span>
+                        </label>
+                        <label class="emoji-option">
+                            <input type="radio" name="trigger" value="👩‍🎓">
+                            <span class="emoji">👩‍🎓</span>
+                        </label>
+                        <label class="emoji-option">
+                            <input type="radio" name="trigger" value="👩‍🎨">
+                            <span class="emoji">👩‍🎨</span>
+                        </label>
+                        <label class="emoji-option">
+                            <input type="radio" name="trigger" value="👩‍❤️‍💋‍👨">
+                            <span class="emoji">👩‍❤️‍💋‍👨</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="question-container">
+                    <h3>2. Bir erkekte en havalı şey nedir:</h3>
+                    <div class="emoji-options" data-question="2">
+                        <label class="emoji-option">
+                            <input type="radio" name="cool" value="📿">
+                            <span class="emoji">📿</span>
+                        </label>
+                        <label class="emoji-option">
+                            <input type="radio" name="cool" value="💵">
+                            <span class="emoji">💵</span>
+                        </label>
+                        <label class="emoji-option">
+                            <input type="radio" name="cool" value="🧠">
+                            <span class="emoji">🧠</span>
+                        </label>
+                        <label class="emoji-option">
+                            <input type="radio" name="cool" value="🏍">
+                            <span class="emoji">🏍</span>
+                        </label>
+                        <label class="emoji-option">
+                            <input type="radio" name="cool" value="💪">
+                            <span class="emoji">💪</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="errorMessage" class="error-message" style="display: none;">
+                    ❌ Sorular yanlış yanıtlanmıştır!
+                </div>
+
+                <button id="submitAnswers" class="submit-btn">Doğrula</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('bebisModal');
+        const bebisCheck = document.getElementById('bebisCheck');
+        const closeBtn = document.querySelector('.close');
+        const submitBtn = document.getElementById('submitAnswers');
+        const errorMessage = document.getElementById('errorMessage');
+        const totalAmount = document.querySelector('.total-amount');
+
+        // Modal açma
+        bebisCheck.addEventListener('change', function() {
+            if (this.checked) {
+                modal.style.display = 'block';
+                // Checkbox'ı geri kapat
+                this.checked = false;
+            }
+        });
+
+        // Modal kapatma
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            resetModal();
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+                resetModal();
+            }
+        });
+
+        // Cevapları kontrol et
+        submitBtn.addEventListener('click', function() {
+            const triggerAnswer = document.querySelector('input[name="trigger"]:checked');
+            const coolAnswer = document.querySelector('input[name="cool"]:checked');
+
+            if (!triggerAnswer || !coolAnswer) {
+                showError('Lütfen tüm soruları yanıtlayın!');
+                return;
+            }
+
+            const isCorrect1 = triggerAnswer.value === '🧕';
+            const isCorrect2 = coolAnswer.value === '🏍';
+
+            if (isCorrect1 && isCorrect2) {
+                // Doğru cevaplar
+                bebisCheck.checked = true;
+                modal.style.display = 'none';
+                totalAmount.innerHTML = 'Ücretiniz gülüşünüzle ödenmiştir 💜';
+                totalAmount.style.fontSize = '2.2em';
+                resetModal();
+            } else {
+                // Yanlış cevaplar
+                showError('Sorular yanlış yanıtlanmıştır!');
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = '❌ ' + message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function resetModal() {
+            document.querySelectorAll('input[name="trigger"]').forEach(input => input.checked = false);
+            document.querySelectorAll('input[name="cool"]').forEach(input => input.checked = false);
+            errorMessage.style.display = 'none';
+        }
+
+        // Emoji seçeneklerine hover efekti
+        document.querySelectorAll('.emoji-option').forEach(option => {
+            option.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.1)';
+            });
+            option.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
